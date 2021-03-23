@@ -1,0 +1,96 @@
+import pandas as pd
+from bs4 import BeautifulSoup as bs
+import requests
+import numpy as np
+webpage=requests.get('https://en.wikipedia.org/wiki/Toy_Story_3')
+soup=bs(webpage.content)
+table=soup.find('table')
+table.prettify()
+
+## can also get it in the following way
+table=soup.find('table', class_='infobox')
+rows=table.find_all('tr')
+
+# creating a dictionary with data
+
+movie_info={}
+def getvalues(row_data):
+    if row_data.find('li'):
+        return [li.get_text(" " , strip=True).replace('\xa0',' ') for li in row_data.find_all('li')]
+    else:
+        return row_data.get_text(" ", strip=True).replace('\xa0',' ')
+
+for index,row in enumerate(rows):
+    if index==0:
+        movie_info['movie name']=row.find('th').get_text()
+    elif index==1: continue
+    else:
+        content=row.find('th').get_text(" ", strip=True)
+        value=getvalues(row.find('td'))
+        movie_info[content]=value
+
+#basically create a function which either returns get_text of elements of a list in td, or the get_text of the td itself 
+
+## now notice that its mostly fine except for \xa0 in some places which is kinda annoying, so lets do string replacement
+# to fix this, we put .string
+
+# next issue is - some words are getting smushed together. Eg- productioncompany
+
+movie_info
+
+
+
+disneymovies=requests.get('https://en.wikipedia.org/wiki/List_of_Walt_Disney_Pictures_films')
+disneymovies=bs(disneymovies.content)
+movies=disneymovies.select(".wikitable.sortable i")
+
+# getting the exact links
+movie_links=[]
+for index,movie in enumerate(movies):
+    try:
+        relativepath=movie.a['href']
+        fullpath='https://en.wikipedia.org'+relativepath
+        title=movie.a['title']
+        movie_links.append(fullpath)
+    except Exception as e:
+        print(movie.get_text())
+movie_links
+
+# define function to get info for each link
+
+def getvalues(row_data):
+    if row_data.find('li'):
+        return [li.get_text(" " , strip=True).replace('\xa0',' ') for li in row_data.find_all('li')]
+    else:
+        return row_data.get_text(" ", strip=True).replace('\xa0',' ')
+    
+
+
+def get_infobox(url):
+    webpage=requests.get(url)
+    
+    soup=bs(webpage.content)
+    table=soup.find('table', class_='infobox')
+    rows=table.find_all('tr')
+    
+    
+    movie_info={}
+    for index,row in enumerate(rows):
+        if index==0:
+            movie_info['movie name']=row.find('th').get_text()
+        elif index==1: continue
+        else:
+            content=row.find('th').get_text(" ", strip=True)
+            value=getvalues(row.find('td'))
+            movie_info[content]=value
+    return movie_info
+    
+    movie_data=[]
+for url in movie_links:
+    try:
+        movie_data.append(get_infobox(url))
+    except Exception as e:
+        print(e)
+        print(url)
+    if index==10: break
+movie_data
